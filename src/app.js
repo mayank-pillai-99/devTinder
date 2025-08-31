@@ -1,23 +1,40 @@
 const express = require('express');
-const {adminAuth,userAuth}=require('./middlewares/auth');
+const connectDB=require('./config/database');
 const app = express();
+const User=require('./models/user');
 
+app.use(express.json())
 
-app.use('/admin',adminAuth);
-
-app.get('/user',userAuth,(req,res)=>{
-    res.send('Here is User Data for all users');
+app.post('/signup',async (req,res)=>{
+    const userObj=req.body;
+    const user=new User(userObj);
+    try{
+        await user.save();
+        res.status(201).send('User registered successfully');
+    }catch(error){
+        console.error('Error registering user:', error);
+        res.status(500).send('Internal Server Error');
+    }
 });
-app.get('/admin/getAllData',(req,res)=>{
-    res.send('Here is all admin data');
-});
 
-app.delete('/admin/deleteUser',(req,res)=>{
-    res.send('User Deleted');
+
+
+
+app.use('/',(err,req,res,next)=>{
+    if(err){
+        res.status(500).send('Internal Server Error');
+    }
 });
   
-app.listen(3000,() => {
+connectDB().then(()=>{
+    console.log('Database connected successfully');
+    app.listen(3000,() => {
     console.log('Server is running on port 3000');
-});
+    });
+}).catch((error)=>{
+    console.error('Database connection failed:',error);
+}); 
+ 
+
 
 
