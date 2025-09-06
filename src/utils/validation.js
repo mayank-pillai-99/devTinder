@@ -12,4 +12,23 @@ const validateSignUpData= (req)=>{
         throw new Error('Weak password');
     }
 }
-module.exports={validateSignUpData};
+
+const validateProfileUpdateData=(req)=>{
+    const ALLOWED_UPDATES = [
+        "photoURL",
+        "about",
+        "gender",
+        "skills",
+        "firstName",
+        "lastName",
+        "age"
+    ];
+
+    const isUpdateAllowed = Object.keys(req.body).every((k) => ALLOWED_UPDATES.includes(k));
+
+    if (!isUpdateAllowed) {
+        throw new Error("Edit Not Allowed")
+    }
+}
+
+module.exports={validateSignUpData, validateProfileUpdateData};

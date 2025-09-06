@@ -1,73 +1,23 @@
  const express = require('express');
 const connectDB=require('./config/database');
-const bcrypt=require('bcrypt');
 const cookieParser = require('cookie-parser');
-const jwt = require('jsonwebtoken');
 const User=require('./models/user');
-const {validateSignUpData}=require('./utils/validation');
-const {userAuth}=require('./middlewares/auth');
 
 const app = express();
 app.use(cookieParser());
 app.use(express.json());
 
-//signup 
-app.post('/signup',async (req,res)=>{  
-    try{
-        // Validate request data
-        validateSignUpData(req);
-        const {firstName,lastName,password,emailId}=req.body;
-        //encrypt password
-        const passwordHash=await bcrypt.hash(password,10);
+const authRouter=require('./routes/auth');
+const profileRouter=require('./routes/profile');
+const requestRouter=require('./routes/requests');       
 
-        const user=new User({
-            firstName,
-            lastName,
-            emailId,
-            password:passwordHash,
-        });
-        await user.save();
-        res.status(201).send('User registered successfully');
-    }catch(error){
-        console.error('Error registering user:', error);
-        res.status(500).send('ERROR: '+error.message );
-    }
-});
 
-//login
-app.post('/login', async(req,res)=>{
-    try{
-        const {emailId,password}=req.body;
-        const user=await User.findOne({emailId:emailId});
-        if (!user){
-            throw new Error('Invalid Credentials');
-        }
-        const isMatch = await user.verifyPassword(password);
-        if (isMatch) {
-            const token = await user.getJWT();
-            res.cookie('token', token,{
-                expires: new Date(Date.now() + 86400000), // 1 day
-            });
-            res.send('Login successful');
-        } else {
-            throw new Error('Invalid Credentials');
-        }
-        
-    }catch(error){
-        console.error('Error logging in user:', error);
-        res.status(500).send('ERROR: '+error.message );
-    }
-});
+app.use('/',authRouter);
+app.use('/',profileRouter);  
+app.use('/',requestRouter);
 
-app.get('/profile', userAuth, async  (req, res) => {
-    try{
-    const user=req.user;
-    res.send(user);
-    }catch(error){
-        console.error('Error fetching profile:', error);
-        res.status(500).send('Something went wrong');
-    }
-}); 
+
+
 
 //get user by email
 app.get('/user', async (req, res) => {
